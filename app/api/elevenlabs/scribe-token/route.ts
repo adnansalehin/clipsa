@@ -15,17 +15,13 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await fetch(
-      "https://api.elevenlabs.io/v1/speech-to-text/get-realtime-token",
+      "https://api.elevenlabs.io/v1/single-use-token/realtime_scribe",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "xi-api-key": apiKey,
         },
-        body: JSON.stringify({
-          model_id: "scribe_v2_realtime",
-          ttl_secs: 300, // 5 minutes
-        }),
       }
     );
 
@@ -39,8 +35,17 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json();
+    const token =
+      data?.token ??
+      data?.realtime_token ??
+      data?.realtimeToken ??
+      data?.access_token;
+    const expiresAt =
+      typeof data?.expires_at === "number"
+        ? data.expires_at * 1000
+        : Date.now() + 300 * 1000; // default to 5 minutes if not provided
 
-    if (!data.token) {
+    if (!token) {
       console.error("[API] No token received from ElevenLabs");
       return NextResponse.json(
         { error: "No token received from ElevenLabs" },
@@ -51,8 +56,8 @@ export async function POST(req: NextRequest) {
     console.log("[API] Scribe token generated successfully");
 
     return NextResponse.json({
-      token: data.token,
-      expiresAt: Date.now() + (300 * 1000), // 5 minutes from now
+      token,
+      expiresAt,
     });
 
   } catch (error) {

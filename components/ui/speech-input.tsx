@@ -24,6 +24,27 @@ export function SpeechInput({
   const [isProcessing, setIsProcessing] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [transcript, setTranscript] = useState('');
+  const baseValueRef = useRef('');
+  const latestRecognizedRef = useRef('');
+
+  const commitTranscript = useCallback(
+    (recognized: string) => {
+      latestRecognizedRef.current = recognized;
+      const trimmedRecognized = recognized.trim();
+      const trimmedBase = baseValueRef.current.trim();
+
+      if (!trimmedRecognized && trimmedBase === value.trim()) {
+        return;
+      }
+
+      const combinedValue = trimmedRecognized
+        ? (trimmedBase ? `${trimmedBase} ${trimmedRecognized}` : trimmedRecognized)
+        : trimmedBase;
+
+      onChange(combinedValue);
+    },
+    [onChange, value],
+  );
 
   // Initialize speech recognition
   const initSpeechRecognition = useCallback(() => {
@@ -40,8 +61,11 @@ export function SpeechInput({
     recognition.lang = 'en-US';
 
     recognition.onstart = () => {
+      baseValueRef.current = value ?? '';
+      latestRecognizedRef.current = '';
       setIsListening(true);
       setTranscript('');
+      setIsProcessing(false);
     };
 
     recognition.onresult = (event) => {
@@ -57,7 +81,9 @@ export function SpeechInput({
         }
       }
 
-      setTranscript(finalTranscript || interimTranscript);
+      const combinedRecognized = `${finalTranscript}${interimTranscript}`.trim();
+      setTranscript(combinedRecognized || interimTranscript);
+      commitTranscript(combinedRecognized);
     };
 
     recognition.onerror = (event) => {
@@ -69,14 +95,13 @@ export function SpeechInput({
     recognition.onend = () => {
       setIsListening(false);
       setIsProcessing(false);
-      if (transcript.trim()) {
-        onChange(value + (value ? ' ' : '') + transcript.trim());
-        setTranscript('');
+      if (latestRecognizedRef.current.trim()) {
+        commitTranscript(latestRecognizedRef.current);
       }
     };
 
     return recognition;
-  }, [transcript, value, onChange]);
+  }, [commitTranscript, value]);
 
   const startListening = useCallback(async () => {
     if (disabled || isListening) return;

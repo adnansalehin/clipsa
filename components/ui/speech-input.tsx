@@ -24,22 +24,16 @@ export function SpeechInput({
   const [isProcessing, setIsProcessing] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [transcript, setTranscript] = useState('');
-  const baseValueRef = useRef('');
   const latestRecognizedRef = useRef('');
 
   const commitTranscript = useCallback(
     (recognized: string) => {
       latestRecognizedRef.current = recognized;
       const trimmedRecognized = recognized.trim();
-      const trimmedBase = baseValueRef.current.trim();
+      if (!trimmedRecognized) return;
 
-      if (!trimmedRecognized && trimmedBase === value.trim()) {
-        return;
-      }
-
-      const combinedValue = trimmedRecognized
-        ? (trimmedBase ? `${trimmedBase} ${trimmedRecognized}` : trimmedRecognized)
-        : trimmedBase;
+      const currentValue = value?.trim() ?? '';
+      const combinedValue = currentValue ? `${currentValue} ${trimmedRecognized}` : trimmedRecognized;
 
       onChange(combinedValue);
     },
@@ -61,7 +55,6 @@ export function SpeechInput({
     recognition.lang = 'en-US';
 
     recognition.onstart = () => {
-      baseValueRef.current = value ?? '';
       latestRecognizedRef.current = '';
       setIsListening(true);
       setTranscript('');
@@ -182,22 +175,12 @@ export function SpeechInput({
         </Button>
 
         <div className="flex-1 min-w-0">
-          {isListening || transcript ? (
-            <div className="text-sm text-muted-foreground">
-              {isListening ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  Listening... {transcript && `"${transcript}"`}
-                </span>
-              ) : (
-                transcript && <span>Recognized: &quot;{transcript}&quot;</span>
-              )}
+          {isListening ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              <span className="sr-only">Listening...</span>
             </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              {placeholder}
-            </div>
-          )}
+          ) : null}
         </div>
 
         {isListening && (

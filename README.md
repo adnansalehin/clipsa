@@ -2,6 +2,14 @@
 
 Clipsa is a Next.js-based AI video generation platform that combines image-to-video conversion, text-to-speech narration, and speech-to-text input capabilities.
 
+## Demo
+
+![Clipsa home](/demo/home.png)
+![Clipsa home (alt)](/demo/home2.png)
+![Clipsa image editor](/demo/image-editor.png)
+
+- **Video**: [YouTube demo](https://www.youtube.com/watch?v=jYvYyYd5PMk)
+
 ## Environment Variables
 
 The following environment variables are required for the application to function properly. Add them to your `.env.local` file:
